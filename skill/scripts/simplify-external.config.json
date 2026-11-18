@@ -1,0 +1,110 @@
+{
+  "guide": "../code-simplifier.body.md",
+  "max_fix_attempts": 2,
+  "agent_timeout_sec": 1800,
+  "test_timeout_sec": 900,
+  "lock_stale_sec": 14400,
+  "keep_runs": 30,
+  "summary": { "max_lines": 40, "max_bytes": 4096 },
+
+  "backends": {
+    "codex": {
+      "model": null,
+      "model_verified": null,
+      "argv": ["codex", "exec", "-m", "{model}", "--sandbox", "workspace-write", "--color", "never",
+               "-C", "{root}", "-o", "{last_message}", "-"],
+      "stdin": "prompt",
+      "timeout_sec": 1800,
+      "version_args": ["--version"],
+      "preflight": [["codex", "login", "status"]],
+      "model_confirm_regex": "(?m)^model: {model}\\s*$",
+      "model_error_patterns": ["model is not supported", "Model metadata for `[^`]*` not found"]
+    },
+    "agy": {
+      "model": null,
+      "model_verified": null,
+      "argv": ["agy",
+               "--print=Read the file {prompt_file} and follow its instructions exactly.",
+               "--model", "{model}", "--mode", "accept-edits", "--output-format", "stream-json"],
+      "stdin": "none",
+      "timeout_sec": 1800,
+      "version_args": ["--version"],
+      "exe_candidates": ["%LOCALAPPDATA%/agy/bin/agy.exe", "~/.local/bin/agy"],
+      "preflight": [],
+      "model_confirm_regex": "\"init\":\\{\"model\":\"{model}\"",
+      "model_error_patterns": ["invalid model selection", "not recognized as a known model"],
+      "incomplete_patterns": ["\"denied_actions\":\\[\\{"]
+    }
+  },
+
+  "env_inputs": ["CI", "NODE_ENV", "PYTHONPATH", "VIRTUAL_ENV", "DOTNET_ROOT", "JAVA_HOME",
+                 "GOFLAGS", "RUSTFLAGS", "UNITY_PATH"],
+
+  "protected": [
+    "test/", "tests/", "__tests__/", "spec/", "specs/", "testing/", "testdata/", "fixtures/",
+    "__snapshots__/", "*Tests/", "*Test/", "*.Tests/", "*.Test/",
+    "*.test.*", "*.spec.*", "*_test.*", "*_spec.*", "test_*.py", "conftest.py", "*.snap",
+    "*Test.cs", "*Tests.cs", "*Test.java", "*Tests.java", "*Test.kt", "*Tests.kt",
+
+    ".github/", ".gitlab/", ".gitlab-ci.yml", ".circleci/", ".buildkite/", "azure-pipelines.yml",
+    ".azure-pipelines/", "Jenkinsfile", ".travis.yml", "appveyor.yml", "bitbucket-pipelines.yml",
+    "pytest.ini", "tox.ini", "noxfile.py", "setup.cfg", ".coveragerc", "jest.config.*", "vitest.config.*",
+    "vite.config.*", "karma.conf.*", "playwright.config.*", "cypress.config.*", "cypress/", ".mocharc*",
+    "babel.config.*", ".babelrc", "tsconfig*.json", "phpunit.xml*", "*.runsettings", "Makefile",
+    "justfile", "Taskfile.yml", ".pre-commit-config.yaml", "Dockerfile", "docker-compose*.yml",
+    ".editorconfig",
+
+    "package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml",
+    "pnpm-workspace.yaml", "bun.lock", "bun.lockb", ".npmrc", ".yarnrc*", "requirements*.txt",
+    "constraints*.txt", "Pipfile", "Pipfile.lock", "poetry.lock", "uv.lock", "pyproject.toml", "setup.py",
+    "Cargo.toml", "Cargo.lock", "go.mod", "go.sum", "go.work*", "*.csproj", "*.fsproj", "*.vbproj",
+    "*.sln", "*.slnx", "*.props", "*.targets", "packages.lock.json", "packages.config", "NuGet.config",
+    "global.json", "Gemfile", "Gemfile.lock", "composer.json", "composer.lock", "build.gradle*",
+    "settings.gradle*", "gradle.properties", "gradle/", "pom.xml", "Packages/manifest.json",
+    "Packages/packages-lock.json", "ProjectSettings/", "*.asmdef", "*.asmref", "*.meta",
+
+    ".claude/", ".codex/", ".agents/", ".gemini/", ".superpowers/", "CLAUDE.md", "AGENTS.md",
+    "GEMINI.md", ".gitignore", ".gitattributes", ".gitmodules", ".env*"
+  ],
+
+  "default_regression_patterns": [
+    "^\\s*Failed\\s+\\S+",
+    "^FAILED\\s",
+    "^E\\s{2,}\\S",
+    "^--- FAIL:",
+    "test result: FAILED",
+    "^\\s*●\\s",
+    "^\\s*FAIL\\s",
+    "error CS\\d{4}",
+    "error TS\\d{4}",
+    "error FS\\d{4}",
+    "error\\[E\\d{4}\\]",
+    "AssertionError",
+    "Assert\\.\\w+\\(\\) Failure",
+    "Assert\\.\\w+ failed",
+    "Expected:?\\s",
+    "SyntaxError",
+    "IndentationError",
+    "NameError",
+    "TypeError",
+    "AttributeError",
+    "ReferenceError",
+    "ImportError",
+    "ModuleNotFoundError",
+    "NullReferenceException",
+    "panicked at",
+    "Traceback \\(most recent call last\\)"
+  ],
+  "default_env_failure_patterns": [
+    "is not recognized as an internal or external command",
+    "command not found",
+    "MSB1003|MSB1009|MSB4019|NETSDK1045|NETSDK1004",
+    "error NU1\\d{3}",
+    "ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EAI_AGAIN",
+    "Temporary failure in name resolution",
+    "(?i)permission denied|access is denied|\\bEACCES\\b|\\bEPERM\\b",
+    "No space left on device",
+    "(?i)being used by another process",
+    "(?i)authentication failed"
+  ]
+}
