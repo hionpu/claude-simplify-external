@@ -390,8 +390,8 @@ def build_ctx(scope: str) -> Ctx:
     if not rpath.exists():
         raise Stop(
             "CONFIG_ERROR",
-            f"no test configuration for this repository; create {rpath} "
-            "(format: see the simplify-external SKILL.md). Test commands are never guessed.",
+            f"no test configuration for this repository ({rpath}). Test commands are never guessed; "
+            "run /simplify-external-init in this repository to create it.",
         )
     rcfg = load_json(rpath, "repo config")
 

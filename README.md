@@ -15,22 +15,22 @@ code. It only diagnoses the result if the regression loop runs out of attempts.
 
 ```text
 run(backend, scope)
-  preflight → fix scope file list + verification set
-  reuse a matching GREEN record, or run the baseline tests (fail → BASELINE_FAILED, no agent call)
+  preflight ??fix scope file list + verification set
+  reuse a matching GREEN record, or run the baseline tests (fail ??BASELINE_FAILED, no agent call)
   snapshot the work tree
   1 simplification call + at most 2 regression-fix calls (same backend, same model):
-    agent edits → scope check → wrapper runs the tests itself
-    pass → VERIFIED / NO_CHANGES
-    code regression → fix prompt with a bounded failure summary (≤40 lines / 4 KiB)
-    still failing after 3 calls → HANDOFF_REQUIRED (handoff.md: last failure + diff since run start)
-    scope violation / agent or environment failure → separate status, no retry
+    agent edits ??scope check ??wrapper runs the tests itself
+    pass ??VERIFIED / NO_CHANGES
+    code regression ??fix prompt with a bounded failure summary (??0 lines / 4 KiB)
+    still failing after 3 calls ??HANDOFF_REQUIRED (handoff.md: last failure + diff since run start)
+    scope violation / agent or environment failure ??separate status, no retry
 ```
 
 - **Scope**: `--changed` = staged, unstaged and untracked (not ignored) files; or one repo-relative
-  file/folder. Tests, CI and test config, dependency/lock files, agent config (`.claude/`, `AGENTS.md`, …)
+  file/folder. Tests, CI and test config, dependency/lock files, agent config (`.claude/`, `AGENTS.md`, ??
   are never editable. Deleted, binary and symlinked files are skipped.
 - **Post-check** (detection, not a sandbox): any new change outside the allowed files, staging,
-  commits or branch switches → `SCOPE_VIOLATION`. Pre-existing user changes are not flagged and
+  commits or branch switches ??`SCOPE_VIOLATION`. Pre-existing user changes are not flagged and
   are never reverted. Nothing is rolled back automatically.
 - **GREEN reuse**: `verify-only <scope>` records a passing run with a fingerprint of HEAD, every
   dirty/untracked file's content, declared extra inputs, environment identity, test commands and
@@ -40,7 +40,7 @@ run(backend, scope)
   A non-zero exit code alone is not treated as a regression.
 - **Models**: each backend uses one model, verified once per machine by `setup` with a real
   non-interactive call. Every run passes it explicitly and confirms it from the CLI output
-  (Codex header `model: …`, agy stream-json `init.model`). If the model can't be confirmed or is
+  (Codex header `model: ??, agy stream-json `init.model`). If the model can't be confirmed or is
   rejected, the run stops with `CONFIG_ERROR`. There is no silent fallback.
 - State and logs live in `<git-dir>/simplify-external/`, outside the work tree.
 
@@ -80,7 +80,11 @@ Restart Claude Code. To update: `git pull && python install.py`. Your settings a
 ## Per-repository test configuration (required)
 
 The wrapper never guesses test commands. Each target repo needs `.claude/simplify-external.json`
-with commands confirmed from CI or project scripts:
+with commands confirmed from CI or project scripts. Without it, `run` stops with `CONFIG_ERROR` and
+points to **`/simplify-external-init`**. That is a separate skill you invoke yourself, once per
+repository. It gathers evidence (CI, scripts, docs), proposes the file with sources for your
+approval, writes it, and runs `verify-only .` once. Like `/simplify-external` it uses
+`disable-model-invocation: true`, so it is never loaded unless you call it. Format:
 
 ```json
 {
@@ -99,7 +103,7 @@ with commands confirmed from CI or project scripts:
   longest prefix wins. A scope spanning several packages runs the deduplicated union.
 - `argv` is an argument array, never a shell string.
 - Optional `regression_patterns` / `env_failure_patterns` per entry extend the built-in patterns.
-- Build output that tests create (`__pycache__/`, `bin/`, `obj/`, …) must be git-ignored.
+- Build output that tests create (`__pycache__/`, `bin/`, `obj/`, ?? must be git-ignored.
   Otherwise test inputs appear to change during the run and the result is `UNVERIFIED`.
 
 ## TDD integration
@@ -116,7 +120,7 @@ python -m unittest discover -s tests -v   # fake agent CLI + fake test runner in
 
 ## License
 
-MIT for this project (see `LICENSE`). `skill/code-simplifier.md` and the derived
-`skill/code-simplifier.body.md` come from Anthropic's `code-simplifier` plugin and are licensed
-under Apache License 2.0 (`skill/LICENSE-code-simplifier`). Provenance and the modification
-(front matter removed) are recorded in `skill/SOURCE.md`.
+MIT for this project (see `LICENSE`). `skills/simplify-external/code-simplifier.md` and the derived
+`skills/simplify-external/code-simplifier.body.md` come from Anthropic's `code-simplifier` plugin and are licensed
+under Apache License 2.0 (`skills/simplify-external/LICENSE-code-simplifier`). Provenance and the modification
+(front matter removed) are recorded in `skills/simplify-external/SOURCE.md`.

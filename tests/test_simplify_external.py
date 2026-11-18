@@ -15,8 +15,8 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-WRAPPER = REPO / "skill" / "scripts" / "simplify_external.py"
-REAL_CONFIG = REPO / "skill" / "scripts" / "simplify-external.config.json"
+WRAPPER = REPO / "skills" / "simplify-external" / "scripts" / "simplify_external.py"
+REAL_CONFIG = REPO / "skills" / "simplify-external" / "scripts" / "simplify-external.config.json"
 INSTALLER = REPO / "install.py"
 
 FAKE_AGENT = textwrap.dedent(
@@ -349,6 +349,8 @@ class Scenarios(Base):
         s, _, out = self.wrapper("run", "codex", "src/calc.py")
         self.assertEqual(s, "CONFIG_ERROR", out)
         self.assertIn("never guessed", out)
+        self.assertIn("/simplify-external-init", out)
+        self.assertEqual(self.count("agent") + self.count("test"), 0)
 
     def test_lock_blocks_concurrent_run(self):
         lock = self.repo / ".git/simplify-external/lock"
@@ -462,7 +464,12 @@ class Install(unittest.TestCase):
             self.assertEqual(p.returncode, 0, p.stderr)
             skill = (cfg / "skills/simplify-external/SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("{{", skill)
-            self.assertIn((cfg / "skills/simplify-external/scripts/simplify_external.py").resolve().as_posix(), skill)
+            wrapper = (cfg / "skills/simplify-external/scripts/simplify_external.py").resolve().as_posix()
+            self.assertIn(wrapper, skill)
+            init = (cfg / "skills/simplify-external-init/SKILL.md").read_text(encoding="utf-8")
+            self.assertNotIn("{{", init)
+            self.assertIn(wrapper, init)
+            self.assertIn("disable-model-invocation: true", init)
             # reinstall over a managed dir is fine
             p = subprocess.run([sys.executable, str(INSTALLER), "--config-dir", tmp], capture_output=True, text=True)
             self.assertEqual(p.returncode, 0, p.stderr)

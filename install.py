@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the /simplify-external skill into a Claude Code config directory.
+"""Install the /simplify-external and /simplify-external-init skills into a Claude Code config directory.
 
   python install.py                     # $CLAUDE_CONFIG_DIR or ~/.claude
   python install.py --config-dir DIR
@@ -16,7 +16,7 @@ import shutil
 import sys
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parent / "skill"
+SRC = Path(__file__).resolve().parent / "skills"
 MARKER = ".installed-by-claude-simplify-external"
 
 
@@ -38,24 +38,27 @@ def main() -> int:
         print("git is required on PATH", file=sys.stderr)
         return 1
 
-    dst = cfg / "skills" / "simplify-external"
-    if dst.exists():
-        if not (dst / MARKER).exists() and not args.force:
+    names = sorted(p.name for p in SRC.iterdir() if (p / "SKILL.md").is_file())
+    targets = {n: cfg / "skills" / n for n in names}
+    for dst in targets.values():
+        if dst.exists() and not (dst / MARKER).exists() and not args.force:
             print(f"{dst} exists and was not created by this installer; re-run with --force to replace it",
                   file=sys.stderr)
             return 1
-        shutil.rmtree(dst)
-    shutil.copytree(SRC, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-    (dst / MARKER).write_text("managed by install.py; local edits are overwritten\n", encoding="utf-8")
 
     python = Path(sys.executable).resolve().as_posix()
-    wrapper = (dst / "scripts" / "simplify_external.py").as_posix()
-    skill = dst / "SKILL.md"
-    text = skill.read_text(encoding="utf-8").replace("{{PYTHON}}", python).replace("{{WRAPPER}}", wrapper)
-    skill.write_text(text, encoding="utf-8")
+    wrapper = (targets["simplify-external"] / "scripts" / "simplify_external.py").as_posix()
+    for name, dst in targets.items():
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(SRC / name, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        (dst / MARKER).write_text("managed by install.py; local edits are overwritten\n", encoding="utf-8")
+        skill = dst / "SKILL.md"
+        text = skill.read_text(encoding="utf-8").replace("{{PYTHON}}", python).replace("{{WRAPPER}}", wrapper)
+        skill.write_text(text, encoding="utf-8")
+        print(f"installed: {dst}")
 
     user_cfg = cfg / "simplify-external.config.json"
-    print(f"installed: {dst}")
     print(f"wrapper:   {wrapper}")
     print(f"settings:  {user_cfg} ({'kept' if user_cfg.exists() else 'created by setup'})")
     print("next (once per backend, makes one real model call):")

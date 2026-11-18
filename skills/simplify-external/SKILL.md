@@ -34,5 +34,5 @@ argument-hint: "<codex|agy> <--changed|repo-relative-path>"
 
 - 백엔드 모델: 머신마다 한 번 `"{{PYTHON}}" "{{WRAPPER}}" setup <codex|agy> <model-id>`.
   실제 비대화형 호출로 모델을 확인한 뒤에만 기록한다. 기록이 없으면 run은 CONFIG_ERROR.
-- 저장소 테스트: 대상 저장소의 `.claude/simplify-external.json`. 없으면 CONFIG_ERROR.
-  테스트 명령은 추측하지 않는다. 형식은 README 참고.
+- 저장소 테스트: 대상 저장소의 `.claude/simplify-external.json`. 없으면 CONFIG_ERROR를
+  보고만 한다. 직접 만들지 않는다. 생성은 사용자가 `/simplify-external-init`을 호출해서 한다.
